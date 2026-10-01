@@ -1,0 +1,68 @@
+---
+import Base from "../layouts/Base.astro";
+import Track from "../components/Track.astro";
+import { getMusic } from "../lib/content";
+import { render } from "astro:content";
+
+const music = await getMusic();
+const rendered = await Promise.all(music.map(async (m) => ({ m, Content: (await render(m)).Content })));
+---
+
+<Base title="Sound" description="Appendix: music Ömer Furkan Çoban makes as a hobby.">
+  <section class="wrap">
+    <header class="paper head">
+      <p class="label full">Appendix A · Off-topic</p>
+      <h1 class="title wide">Sound</h1>
+      <p class="intro">
+        Not everything is a regression. In my spare time I make music as a hobby. Press play and keep browsing: the player stays with you across
+        the site.
+      </p>
+      <aside class="referee">
+        <b>Referee 2</b>
+        This appendix is not related to the main contribution of the paper. I enjoyed it anyway.
+      </aside>
+    </header>
+
+    <div class="paper">
+      {
+        rendered.length ? (
+          <div>
+            {rendered.map(({ m, Content }) => (
+              <Track title={m.data.title} date={m.data.date} audio={m.data.audio} embed={m.data.embed} genre={m.data.genre} bpm={m.data.bpm} musicalKey={m.data.key} gear={m.data.gear}>
+                <Content />
+              </Track>
+            ))}
+          </div>
+        ) : (
+          <p class="empty">No recordings uploaded yet. This appendix will be updated in a future version of the paper.</p>
+        )
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  .head {
+    padding-top: clamp(2.5rem, 6vw, 5rem);
+    padding-bottom: 2rem;
+    border-bottom: 1.5px solid var(--rule);
+  }
+
+  h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 380;
+    margin: 1rem 0 1.4rem;
+  }
+
+  .intro {
+    font-size: 1.2rem;
+    color: var(--ink-2);
+    margin: 0;
+  }
+
+  .empty {
+    font-style: italic;
+    color: var(--muted);
+    padding: 2rem 0;
+  }
+</style>

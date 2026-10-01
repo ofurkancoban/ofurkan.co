@@ -1,0 +1,115 @@
+---
+import Base from "../../layouts/Base.astro";
+import WorkList from "../../components/WorkList.astro";
+import { getProjects, kindLabel } from "../../lib/content";
+
+const projects = await getProjects();
+const kinds = [...new Set(projects.map((p) => p.data.kind))];
+---
+
+<Base title="Work" description="Research papers, R packages, tools and apps by Ömer Furkan Çoban.">
+  <section class="wrap">
+    <header class="paper head">
+      <p class="label full">§1 · Work · {projects.length} entries</p>
+      <h1 class="title wide">Research &amp; <em>software</em></h1>
+      <p class="intro">
+        Papers, packages, pipelines and the odd piece of hardware, listed like a reference section. Each entry comes with a figure. The figures are
+        generated from the project's name, so treat them as illustrations, not results.
+      </p>
+      <aside class="referee">
+        <b>Referee 2</b>
+        The thumbnails are synthetic data. The author is aware and asks you not to report them as findings.
+      </aside>
+    </header>
+
+    <div class="filters" role="group" aria-label="Filter by type">
+      <button type="button" class="f on" data-f="all">All <span>{projects.length}</span></button>
+      {
+        kinds.map((k) => (
+          <button type="button" class="f" data-f={k}>
+            {kindLabel[k]} <span>{projects.filter((p) => p.data.kind === k).length}</span>
+          </button>
+        ))
+      }
+    </div>
+
+    <div data-worklist>
+      <WorkList items={projects} />
+    </div>
+  </section>
+</Base>
+
+<style>
+  .head {
+    padding-top: clamp(2.5rem, 6vw, 5rem);
+    padding-bottom: 2rem;
+    border-bottom: 1.5px solid var(--rule);
+  }
+
+  h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 380;
+    margin: 1rem 0 1.4rem;
+  }
+
+  h1 em {
+    font-weight: 300;
+    color: var(--ink-2);
+  }
+
+  .intro {
+    font-size: 1.2rem;
+    color: var(--ink-2);
+    margin: 0;
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding-block: 1.4rem 0.6rem;
+  }
+
+  .f {
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--rule-soft);
+    border-radius: 3px;
+    background: transparent;
+    padding: 0.4rem 0.7rem;
+  }
+
+  .f span {
+    color: var(--muted);
+    margin-left: 0.2rem;
+  }
+
+  .f:hover {
+    border-color: var(--rule);
+  }
+
+  .f.on {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+</style>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const list = document.querySelector<HTMLElement>("[data-worklist]");
+    if (!list || list.dataset.bound) return;
+    list.dataset.bound = "1";
+    const btns = [...document.querySelectorAll<HTMLButtonElement>("[data-f]")];
+    btns.forEach((b) =>
+      b.addEventListener("click", () => {
+        btns.forEach((x) => x.classList.toggle("on", x === b));
+        list.querySelectorAll<HTMLElement>("li[data-kind]").forEach((li) => {
+          li.hidden = b.dataset.f !== "all" && li.dataset.kind !== b.dataset.f;
+        });
+      })
+    );
+  });
+</script>

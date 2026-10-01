@@ -1,0 +1,406 @@
+---
+import Base from "../layouts/Base.astro";
+import WorkList from "../components/WorkList.astro";
+import Evidence from "../components/Evidence.astro";
+import Track from "../components/Track.astro";
+import CiteBox from "../components/CiteBox.astro";
+import { getProjects, getNotes, getMusic } from "../lib/content";
+import { fmtDate, readingTime } from "../lib/site";
+import { CV } from "../data/cv";
+import { render } from "astro:content";
+import gh from "../data/github.json";
+
+const projects = await getProjects();
+const featured = projects.filter((p) => p.data.featured).slice(0, 6);
+const notes = (await getNotes()).slice(0, 3);
+const music = (await getMusic()).slice(0, 2);
+const musicRendered = await Promise.all(music.map(async (m) => ({ m, Content: (await render(m)).Content })));
+const version = new Date(gh.fetchedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+const toc = [
+  { n: "1", label: "Selected work", href: "#work" },
+  { n: "2", label: "Notes", href: "#notes" },
+  { n: "3", label: "Evidence", href: "#data" },
+  ...(music.length ? [{ n: "A", label: "Appendix: Sound", href: "#sound" }] : []),
+  { n: "", label: "About & CV", href: "/about" },
+];
+---
+
+<Base>
+  <section class="wrap titlepage">
+    <div class="paper">
+      <p class="label series full">Working Paper Series · No. 26-01 · This version: {version}</p>
+
+      <h1 class="title big wide">
+        Messy Data, Causal Answers, and Software That Ships: <em>Evidence from One Applied Economist</em>
+      </h1>
+
+      <div class="byline">
+        <span class="author">Ömer Furkan Çoban<sup>*</sup></span>
+        <span class="mono status"><i class="dot" aria-hidden="true"></i>Open to work</span>
+      </div>
+
+      <nav class="toc" aria-label="Contents">
+        <p class="label">Contents</p>
+        <ol>
+          {
+            toc.map((t) => (
+              <li>
+                <a href={t.href}>
+                  <span class="mono tn">{t.n}</span>
+                  <span class="tl">{t.label}</span>
+                  <span class="lead" aria-hidden="true" />
+                  <span class="mono">→</span>
+                </a>
+              </li>
+            ))
+          }
+        </ol>
+      </nav>
+
+      <div class="abstract">
+        <span class="label">Abstract</span>
+        <p>
+          I am an applied economist and data scientist, finishing an M.Sc. in Applied Economics and Data Science in Oldenburg, Germany. I build
+          panels from satellite and administrative data, replicate published results on independently constructed pipelines, and turn the boring
+          parts into tools that run on their own: an <a href="/work/inkar">R package on CRAN</a>, a <a href="/work/aeds-rag-assistant"
+            >retrieval-augmented assistant</a
+          > in production, a <a href="/work/discogs-data">monthly data pipeline</a> to Kaggle. Using {gh.total} GitHub contributions as data, I find
+          that I ship consistently, with a statistically significant drop on weekends (<a href="#data">§3</a>). <span class="hl"
+            >Policy implication: hire me.</span
+          >
+        </p>
+        <p class="kw">
+          <span class="label">JEL codes</span> C23, C55, C87, O18, R11 <br />
+          <span class="label">Keywords</span> causal inference, panel data, GIS, reproducibility, data engineering, RAG
+        </p>
+        <div class="cta">
+          <a class="btn" href="#work">Read the work</a>
+          {CV.cvUrl && <a class="btn ghost" href={CV.cvUrl}>Download CV (PDF)</a>}
+          <CiteBox />
+        </div>
+      </div>
+
+      <p class="footnote">
+        <sup>*</sup> Carl von Ossietzky Universität Oldenburg. I thank R, Quarto and an unreasonably patient VPS for helpful comments. Correspondence:
+        see the end of this page.
+      </p>
+    </div>
+  </section>
+
+  <section class="wrap" id="work">
+    <div class="sec">
+      <span class="num">§1</span>
+      <h2>Selected work</h2>
+      <a class="more" href="/work">All {projects.length} entries →</a>
+    </div>
+    <div data-reveal>
+      <WorkList items={featured} />
+    </div>
+  </section>
+
+  <section class="wrap" id="notes">
+    <div class="sec">
+      <span class="num">§2</span>
+      <h2>Notes</h2>
+      <a class="more" href="/notes">All notes →</a>
+    </div>
+    <ol class="notes" data-reveal>
+      {
+        notes.map((p, i) => (
+          <li>
+            <a href={`/notes/${p.id}`}>
+              <span class="mono nn">2.{i + 1}</span>
+              <span class="nb">
+                <span class="nt">{p.data.title}</span>
+                <span class="nd">{p.data.description}</span>
+              </span>
+              <span class="mono nm">
+                {fmtDate(p.data.date)}
+                <br />
+                {readingTime(p.body ?? "")} min read
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <Evidence />
+
+  {
+    musicRendered.length > 0 && (
+      <section class="wrap" id="sound">
+        <div class="sec">
+          <span class="num">App. A</span>
+          <h2>
+            Sound <em>(off-topic)</em>
+          </h2>
+          <a class="more" href="/sound">
+            All recordings →
+          </a>
+        </div>
+        <div class="paper">
+          <p class="app-intro">Not everything is a regression. In my spare time I make music as a hobby; a few recordings live here.</p>
+          <div data-reveal>
+            {musicRendered.map(({ m, Content }) => (
+              <Track title={m.data.title} date={m.data.date} audio={m.data.audio} embed={m.data.embed} genre={m.data.genre} bpm={m.data.bpm} musicalKey={m.data.key}>
+                <Content />
+              </Track>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  .titlepage {
+    padding-top: clamp(2.5rem, 6vw, 5rem);
+  }
+
+  .series {
+    margin: 0 0 2rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+
+  .big {
+    font-size: clamp(2.6rem, 6.4vw, 5.4rem);
+    font-weight: 380;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    max-width: 18ch;
+    animation: rise 0.9s var(--ease) both;
+  }
+
+  .big em {
+    font-style: italic;
+    font-weight: 300;
+    color: var(--ink-2);
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+
+  .byline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1.4rem;
+    margin: 2rem 0 2.5rem;
+    animation: rise 0.9s 0.1s var(--ease) both;
+  }
+
+  .author {
+    font-size: 1.5rem;
+    font-variant-caps: small-caps;
+    letter-spacing: 0.04em;
+  }
+
+  .author sup {
+    color: var(--accent);
+    font-variant-caps: normal;
+  }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--green);
+  }
+
+  .status .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 60%, transparent);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 8px transparent;
+    }
+  }
+
+  .toc {
+    grid-column: 3;
+    grid-row: 3 / span 2;
+    align-self: start;
+    margin-top: 2.6rem;
+    animation: rise 0.9s 0.25s var(--ease) both;
+  }
+
+  .toc ol {
+    list-style: none;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    border-top: 1.5px solid var(--rule);
+    border-bottom: 1.5px solid var(--rule);
+  }
+
+  .toc a {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.45rem 0;
+    text-decoration: none;
+  }
+
+  .tn {
+    width: 1rem;
+    color: var(--accent);
+  }
+
+  .lead {
+    flex: 1;
+    border-bottom: 1px dotted var(--muted);
+    transform: translateY(-0.25em);
+  }
+
+  .abstract {
+    animation: rise 0.9s 0.18s var(--ease) both;
+    border-top: 1.5px solid var(--rule);
+    padding-top: 1.2rem;
+  }
+
+  .abstract p {
+    margin: 0.5rem 0 0;
+    font-size: 1.12rem;
+    line-height: 1.6;
+    hyphens: auto;
+    text-align: justify;
+  }
+
+  .abstract .label + p,
+  .abstract > .label {
+    margin-top: 0;
+  }
+
+  .abstract a {
+    color: var(--blue);
+  }
+
+  @media (max-width: 640px) {
+    .abstract p {
+      text-align: left;
+    }
+  }
+
+  .kw {
+    font-size: 0.95rem !important;
+    color: var(--ink-2);
+    text-align: left !important;
+    margin-top: 1.2rem !important;
+  }
+
+  .kw .label {
+    margin-right: 0.5rem;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1.8rem;
+  }
+
+  .footnote {
+    font-size: 0.85rem;
+    color: var(--muted);
+    border-top: 1px solid var(--rule-soft);
+    margin-top: 3rem;
+    padding-top: 0.6rem;
+    max-width: 60ch;
+  }
+
+  .footnote sup {
+    color: var(--accent);
+  }
+
+  @media (max-width: 1020px) {
+    .toc {
+      grid-column: 1;
+      grid-row: auto;
+      margin: 0 0 2rem;
+    }
+  }
+
+  .notes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .notes a {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr) 9rem;
+    column-gap: 2.5rem;
+    padding: 1.3rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .nn {
+    color: var(--accent);
+    padding-top: 0.3rem;
+  }
+
+  .nb {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .nt {
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  .notes a:hover .nt {
+    color: var(--accent);
+  }
+
+  .nd {
+    color: var(--ink-2);
+  }
+
+  .nm {
+    color: var(--muted);
+    text-align: right;
+    padding-top: 0.3rem;
+  }
+
+  @media (max-width: 760px) {
+    .notes a {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 0.4rem;
+    }
+    .nn {
+      display: none;
+    }
+    .nm {
+      text-align: left;
+    }
+  }
+
+  .app-intro {
+    font-style: italic;
+    color: var(--ink-2);
+    margin: 0 0 1rem;
+  }
+</style>

@@ -1,0 +1,58 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Not found" description="This page does not exist.">
+  <section class="wrap">
+    <div class="paper nf">
+      <p class="label full">Erratum · Error 404</p>
+      <h1 class="title wide">This page was <em>retracted.</em></h1>
+      <table class="booktabs">
+        <caption><b>Table 404.</b> Probability that this page exists</caption>
+        <thead><tr><th></th><th>(1)</th></tr></thead>
+        <tbody>
+          <tr><td>Page exists</td><td>0.00</td></tr>
+          <tr class="se"><td></td><td>(0.00)</td></tr>
+          <tr class="mid"><td>Observations</td><td>1</td></tr>
+        </tbody>
+      </table>
+      <p class="t">The link you followed points to a section that is not in this version of the paper.</p>
+      <div class="cta">
+        <a class="btn" href="/">Back to the title page</a>
+        <a class="btn ghost" href="/work">Browse the work</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    padding-top: clamp(3rem, 8vw, 6rem);
+  }
+
+  h1 {
+    font-size: clamp(2.8rem, 7vw, 5.4rem);
+    font-weight: 380;
+    margin: 1rem 0 2.5rem;
+  }
+
+  h1 em {
+    color: var(--accent);
+  }
+
+  .booktabs {
+    max-width: 360px;
+  }
+
+  .t {
+    font-size: 1.2rem;
+    color: var(--ink-2);
+    margin: 2rem 0 1.4rem;
+  }
+
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+</style>

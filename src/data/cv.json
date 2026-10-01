@@ -1,0 +1,92 @@
+{
+  "cvUrl": "",
+  "bio": {
+    "lead": "I'm Ömer Furkan Çoban, an applied economist and data scientist based in Oldenburg, Germany.",
+    "rest": [
+      "I am doing my M.Sc. in Applied Economics and Data Science at Carl von Ossietzky University of Oldenburg. My work sits where econometrics meets engineering: replicating published results on independently built pipelines, building panels from satellite and administrative data, and turning the boring parts into tools that run on their own.",
+      "I care about reproducibility (one command from raw data to final PDF), honest identification, and software other people can actually install. Outside of work, I make music as a hobby."
+    ]
+  },
+  "education": [
+    {
+      "when": "Ongoing",
+      "what": "M.Sc. Applied Economics & Data Science",
+      "where": "Carl von Ossietzky Universität Oldenburg"
+    }
+  ],
+  "experience": [],
+  "skills": [
+    {
+      "group": "Econometrics",
+      "items": [
+        "Panel data (TWFE)",
+        "Dynamic panel GMM",
+        "Replication",
+        "Time series (ARIMAX)",
+        "Policy evaluation"
+      ]
+    },
+    {
+      "group": "Spatial",
+      "items": [
+        "GIS",
+        "sf",
+        "Google Earth Engine",
+        "Nighttime lights",
+        "GHSL"
+      ]
+    },
+    {
+      "group": "Languages",
+      "items": [
+        "R",
+        "Python",
+        "SQL",
+        "TypeScript",
+        "JavaScript",
+        "C"
+      ]
+    },
+    {
+      "group": "ML & AI",
+      "items": [
+        "scikit-learn",
+        "XGBoost",
+        "RAG",
+        "LangGraph",
+        "Chroma",
+        "Cross-encoder reranking"
+      ]
+    },
+    {
+      "group": "Data engineering",
+      "items": [
+        "ETL pipelines",
+        "PostgreSQL",
+        "Docker",
+        "GitHub Actions",
+        "Metabase"
+      ]
+    },
+    {
+      "group": "Publishing",
+      "items": [
+        "Quarto",
+        "CRAN packaging",
+        "renv",
+        "Make",
+        "Astro"
+      ]
+    }
+  ],
+  "coursework": [
+    "Applied Econometrics Using GIS Techniques",
+    "Development Economics Seminar",
+    "Econometrics of Policy Evaluation",
+    "Spatial Econometrics",
+    "Forecasting Methods",
+    "Data Science 1",
+    "Business Intelligence I & II",
+    "Computer Science for Science"
+  ]
+}

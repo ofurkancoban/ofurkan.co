@@ -1,0 +1,222 @@
+---
+const path = Astro.url.pathname.replace(/\/$/, "") || "/";
+const links = [
+  { n: "§1", href: "/work", label: "Work" },
+  { n: "§2", href: "/notes", label: "Notes" },
+  { n: "§3", href: "/#data", label: "Data" },
+  { n: "App.", href: "/sound", label: "Sound" },
+  { n: "", href: "/about", label: "About" },
+];
+const isActive = (href: string) => !href.includes("#") && (path === href || path.startsWith(href + "/"));
+---
+
+<header class="mast" transition:name="mast">
+  <div class="wrap mast-in">
+    <a href="/" class="brand" aria-label="ofurkan.co home">
+      <span class="name">ofurkan.co</span>
+      <span class="wp mono">WP No. 26-01</span>
+    </a>
+
+    <nav aria-label="Main">
+      <ol>
+        {
+          links.map((l) => (
+            <li>
+              <a href={l.href} class:list={{ active: isActive(l.href) }} aria-current={isActive(l.href) ? "page" : undefined}>
+                {l.n && <span class="n">{l.n}</span>}
+                <span>{l.label}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </nav>
+
+    <div class="tools">
+      <span class="clock mono" data-clock title="Local time in Oldenburg, Germany">Oldenburg --:--</span>
+      <button class="mode mono" data-mode-toggle type="button" aria-label="Switch between light (print) and dark (screen) mode">
+        <span class="o print">Print</span><span class="o screen">Screen</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .mast {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .mast-in {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: 56px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.7rem;
+    text-decoration: none;
+  }
+
+  .name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    font-style: italic;
+    letter-spacing: -0.01em;
+  }
+
+  .wp {
+    color: var(--muted);
+  }
+
+  nav {
+    margin-left: auto;
+  }
+
+  nav ol {
+    display: flex;
+    gap: 1.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  nav a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0.3rem 0;
+    text-decoration: none;
+    font-size: 1rem;
+    border-bottom: 1.5px solid transparent;
+  }
+
+  nav .n {
+    font-family: var(--f-mono);
+    font-size: 0.66rem;
+    color: var(--accent);
+  }
+
+  nav a.active {
+    border-bottom-color: var(--ink);
+  }
+
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-left: 1.2rem;
+    border-left: 1px solid var(--rule-soft);
+  }
+
+  .clock {
+    color: var(--muted);
+  }
+
+  .mode {
+    display: inline-flex;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .o {
+    padding: 0.32rem 0.5rem;
+    transition: background 0.25s, color 0.25s;
+  }
+
+  :global(html[data-mode="print"]) .print,
+  :global(html[data-mode="screen"]) .screen {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  @media (max-width: 900px) {
+    .mast-in {
+      flex-wrap: wrap;
+      height: auto;
+      padding-block: 0.6rem;
+      gap: 0.4rem 1rem;
+    }
+    .tools {
+      margin-left: auto;
+      border: 0;
+      padding: 0;
+    }
+    .clock,
+    .wp {
+      display: none;
+    }
+    nav {
+      order: 3;
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    nav ol {
+      gap: 1.1rem;
+    }
+  }
+</style>
+
+<script>
+  function tick() {
+    const el = document.querySelector<HTMLElement>("[data-clock]");
+    if (!el) return;
+    const t = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(new Date());
+    el.textContent = `Oldenburg ${t}`;
+  }
+
+  function setupMode() {
+    const btn = document.querySelector<HTMLButtonElement>("[data-mode-toggle]");
+    if (!btn || btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      const root = document.documentElement;
+      const next = root.dataset.mode === "screen" ? "print" : "screen";
+      const apply = () => {
+        root.dataset.mode = next;
+        try {
+          localStorage.setItem("mode", next);
+        } catch {}
+        window.dispatchEvent(new CustomEvent("mode:change", { detail: next }));
+      };
+      const doc = document as Document & { startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } };
+      if (!doc.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) return apply();
+      // A top-to-bottom wipe, like a page coming out of the printer.
+      root.classList.add("mode-switch");
+      const vt = doc.startViewTransition(apply);
+      vt.ready.then(() => {
+        root.animate(
+          { clipPath: ["inset(0 0 100% 0)", "inset(0 0 0 0)"] },
+          { duration: 550, easing: "cubic-bezier(.2,.7,.1,1)", pseudoElement: "::view-transition-new(root)" }
+        );
+      });
+      vt.finished.then(() => root.classList.remove("mode-switch"));
+    });
+  }
+
+  document.addEventListener("astro:page-load", () => {
+    tick();
+    setupMode();
+  });
+  setInterval(tick, 20_000);
+</script>
+
+<style is:global>
+  html.mode-switch::view-transition-old(root),
+  html.mode-switch::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+</style>

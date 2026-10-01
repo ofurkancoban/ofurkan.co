@@ -1,0 +1,264 @@
+---
+// A playable track row. Local audio gets a waveform drawn from the decoded file
+// and plays through the persistent deck; external tracks fall back to an embed.
+import { fmtDate } from "../lib/site";
+
+interface Props {
+  title: string;
+  date: Date;
+  audio?: string;
+  embed?: string;
+  genre?: string;
+  bpm?: number;
+  musicalKey?: string;
+  gear?: string[];
+}
+
+const { title, date, audio, embed, genre, bpm, musicalKey, gear = [] } = Astro.props;
+const meta = [genre, bpm ? `${bpm} BPM` : null, musicalKey].filter(Boolean).join(" · ");
+---
+
+<article class="track" data-track={audio} data-title={title}>
+  {
+    audio ? (
+      <button class="pp" type="button" data-track-play aria-label={`Play ${title}`}>
+        <span class="tri" aria-hidden="true" />
+      </button>
+    ) : (
+      <span class="pp ext" aria-hidden="true">
+        ↗
+      </span>
+    )
+  }
+  <div class="body">
+    <h3>{title}</h3>
+    <p class="meta mono">{meta || " "} <span class="date">{fmtDate(date)}</span></p>
+    {
+      audio ? (
+        <canvas class="wf" data-wf height="56" aria-hidden="true" />
+      ) : embed ? (
+        <iframe class="embed" src={embed} loading="lazy" title={title} allow="autoplay; encrypted-media" />
+      ) : null
+    }
+    {gear.length > 0 && <p class="gear mono">Gear: {gear.join(", ")}</p>}
+    <div class="notes"><slot /></div>
+  </div>
+</article>
+
+<style>
+  .track {
+    display: grid;
+    grid-template-columns: 2.8rem 1fr;
+    gap: 1rem;
+    padding: 1.4rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+    align-items: start;
+  }
+
+  .pp {
+    display: grid;
+    place-items: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 3px;
+    border: 1px solid var(--rule);
+    background: transparent;
+    transition: background 0.2s, color 0.2s, transform 0.2s var(--ease);
+  }
+
+  .pp:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .tri {
+    width: 0;
+    height: 0;
+    margin-left: 4px;
+    border-left: 13px solid currentColor;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+  }
+
+  .track.playing .pp {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .track.playing .tri {
+    margin: 0;
+    width: 12px;
+    height: 14px;
+    border: 0;
+    border-left: 4px solid currentColor;
+    border-right: 4px solid currentColor;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.45rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  .meta {
+    margin: 0.35rem 0 0.8rem;
+    color: var(--muted);
+  }
+
+  .date {
+    margin-left: 0.6rem;
+  }
+
+  .wf {
+    display: block;
+    width: 100%;
+    height: 56px;
+    cursor: pointer;
+  }
+
+  .embed {
+    width: 100%;
+    height: 166px;
+    border: 0;
+    border-radius: 8px;
+  }
+
+  .gear {
+    color: var(--muted);
+    margin: 0.6rem 0 0;
+  }
+
+  .notes {
+    color: var(--ink-2);
+    max-width: 62ch;
+  }
+
+  .notes :global(p) {
+    margin: 0.6rem 0 0;
+  }
+
+
+</style>
+
+<script>
+  // Waveforms are decoded lazily, once per file, and redrawn as playback progresses.
+  const peaksCache = new Map<string, Promise<number[]>>();
+
+  async function peaks(src: string, n: number) {
+    if (!peaksCache.has(src)) {
+      peaksCache.set(
+        src,
+        (async () => {
+          const buf = await (await fetch(src)).arrayBuffer();
+          const AC = window.OfflineAudioContext;
+          const ctx = new AC(1, 44100, 44100);
+          const audio = await ctx.decodeAudioData(buf);
+          const data = audio.getChannelData(0);
+          const size = Math.floor(data.length / n);
+          const out: number[] = [];
+          for (let i = 0; i < n; i++) {
+            let m = 0;
+            for (let j = i * size; j < (i + 1) * size; j += 16) m = Math.max(m, Math.abs(data[j]));
+            out.push(m);
+          }
+          const max = Math.max(...out, 0.01);
+          return out.map((v) => v / max);
+        })()
+      );
+    }
+    return peaksCache.get(src)!;
+  }
+
+  function draw(cv: HTMLCanvasElement, p: number[], progress: number) {
+    const dpr = devicePixelRatio || 1;
+    const w = cv.clientWidth;
+    const h = cv.clientHeight;
+    cv.width = w * dpr;
+    cv.height = h * dpr;
+    const g = cv.getContext("2d")!;
+    g.scale(dpr, dpr);
+    const css = getComputedStyle(document.documentElement);
+    const ink = css.getPropertyValue("--ink").trim();
+    const acc = css.getPropertyValue("--accent").trim();
+    const bw = w / p.length;
+    p.forEach((v, i) => {
+      const bh = Math.max(2, v * h);
+      g.fillStyle = i / p.length < progress ? acc : ink;
+      g.globalAlpha = i / p.length < progress ? 1 : 0.55;
+      g.fillRect(i * bw, (h - bh) / 2, Math.max(1, bw - 1.5), bh);
+    });
+  }
+
+  function setup() {
+    const tracks = [...document.querySelectorAll<HTMLElement>("[data-track]")].filter((t) => !t.dataset.bound);
+    if (!tracks.length) return;
+    const ac = new AbortController();
+    document.addEventListener("astro:before-swap", () => ac.abort(), { once: true });
+
+    for (const t of tracks) {
+      t.dataset.bound = "1";
+      const src = t.dataset.track!;
+      const cv = t.querySelector<HTMLCanvasElement>("[data-wf]");
+      let p: number[] = [];
+      let progress = 0;
+
+      const render = () => cv && p.length && draw(cv, p, progress);
+      if (cv) {
+        const io = new IntersectionObserver((en) => {
+          if (en[0].isIntersecting) {
+            io.disconnect();
+            peaks(src, Math.max(60, Math.floor(cv.clientWidth / 4)))
+              .then((r) => {
+                p = r;
+                render();
+              })
+              .catch(() => {});
+          }
+        });
+        io.observe(cv);
+        cv.addEventListener(
+          "click",
+          (e) => {
+            const r = cv.getBoundingClientRect();
+            const ratio = (e.clientX - r.left) / r.width;
+            if (!t.classList.contains("playing")) {
+              window.dispatchEvent(new CustomEvent("deck:play", { detail: { src, title: t.dataset.title } }));
+              setTimeout(() => window.dispatchEvent(new CustomEvent("deck:seek", { detail: { src, ratio } })), 250);
+            } else window.dispatchEvent(new CustomEvent("deck:seek", { detail: { src, ratio } }));
+          },
+          { signal: ac.signal }
+        );
+        window.addEventListener("resize", render, { signal: ac.signal });
+        // Colours come from CSS tokens, so redraw after switching print/screen mode.
+        window.addEventListener("mode:change", () => requestAnimationFrame(render), { signal: ac.signal });
+      }
+
+      t.querySelector("[data-track-play]")?.addEventListener(
+        "click",
+        () => window.dispatchEvent(new CustomEvent("deck:play", { detail: { src, title: t.dataset.title } })),
+        { signal: ac.signal }
+      );
+
+      window.addEventListener(
+        "deck:state",
+        (e) => {
+          const s = (e as CustomEvent<{ src: string; playing: boolean; time: number; duration: number }>).detail;
+          const mine = s.src.endsWith(src);
+          t.classList.toggle("playing", mine && s.playing);
+          const next = mine && s.duration ? s.time / s.duration : 0;
+          if (Math.abs(next - progress) > 0.002 || (!mine && progress)) {
+            progress = next;
+            render();
+          }
+        },
+        { signal: ac.signal }
+      );
+    }
+    window.dispatchEvent(new CustomEvent("deck:ping"));
+  }
+
+  document.addEventListener("astro:page-load", setup);
+</script>

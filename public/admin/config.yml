@@ -1,0 +1,154 @@
+# Admin panel (Sveltia CMS) for ofurkan.co.
+# Saving in the panel commits to GitHub; the deploy workflow then rebuilds and publishes the site.
+
+backend:
+  name: github
+  repo: ofurkancoban/ofurkan.co
+  branch: main
+  commit_messages:
+    create: "Add {{collection}} \"{{slug}}\""
+    update: "Update {{collection}} \"{{slug}}\""
+    delete: "Delete {{collection}} \"{{slug}}\""
+    uploadMedia: "Upload \"{{path}}\""
+    deleteMedia: "Delete \"{{path}}\""
+
+site_url: https://ofurkan.co
+display_url: https://ofurkan.co
+logo_url: /favicon.svg
+
+media_folder: public/media
+public_folder: /media
+
+output:
+  omit_empty_optional_fields: true
+
+collections:
+  - name: projects
+    label: "§1 Work"
+    label_singular: Project
+    folder: src/content/projects
+    create: true
+    extension: md
+    format: frontmatter
+    slug: "{{slug}}"
+    sortable_fields: [order, year, title]
+    summary: "[{{order}}] {{title}} ({{year}})"
+    fields:
+      - { name: title, label: Title, widget: string }
+      - { name: summary, label: "Summary (abstract, 1-2 sentences)", widget: text }
+      - { name: year, label: Year, widget: number, value_type: int }
+      - name: kind
+        label: Type
+        widget: select
+        options:
+          - { label: Paper, value: paper }
+          - { label: R package, value: package }
+          - { label: Tool, value: tool }
+          - { label: Web app, value: app }
+          - { label: Hardware, value: hardware }
+      - { name: stack, label: "Stack (languages, libraries)", widget: list }
+      - { name: methods, label: "Methods (papers only)", widget: list, required: false }
+      - { name: role, label: "Role / context", widget: string, required: false, hint: "e.g. Sole author · Course name, Uni Oldenburg" }
+      - { name: repo, label: "GitHub URL", widget: string, required: false }
+      - { name: live, label: "Live URL", widget: string, required: false }
+      - { name: featured, label: "Show on home page", widget: boolean, default: false }
+      - { name: order, label: "Order (lower = higher in list)", widget: number, value_type: int, default: 99 }
+      - name: figure
+        label: "Figure style (empty = automatic)"
+        widget: select
+        required: false
+        options: [scatter, coef, series, hist, map, network]
+      - { name: body, label: Body, widget: markdown }
+
+  - name: writing
+    label: "§2 Notes (blog)"
+    label_singular: Note
+    folder: src/content/writing
+    create: true
+    extension: md
+    format: frontmatter
+    slug: "{{slug}}"
+    sortable_fields: [date, title]
+    summary: "{{title}} ({{date}})"
+    fields:
+      - { name: title, label: Title, widget: string }
+      - { name: description, label: "Description (abstract)", widget: text }
+      - { name: date, label: Date, widget: datetime, format: "YYYY-MM-DD", time_format: false }
+      - { name: tags, label: Tags, widget: list, required: false }
+      - { name: draft, label: "Draft (not published)", widget: boolean, default: false }
+      - { name: body, label: Body, widget: markdown }
+
+  - name: music
+    label: "Appendix A: Sound"
+    label_singular: Track
+    folder: src/content/music
+    create: true
+    extension: md
+    format: frontmatter
+    slug: "{{slug}}"
+    sortable_fields: [date, title]
+    summary: "{{title}} ({{date}})"
+    fields:
+      - { name: title, label: Title, widget: string }
+      - { name: date, label: Date, widget: datetime, format: "YYYY-MM-DD", time_format: false }
+      - name: audio
+        label: "Audio file (mp3, m4a, wav)"
+        widget: file
+        required: false
+        media_folder: /public/audio
+        public_folder: /audio
+        hint: "Either upload a file here or paste an embed URL below."
+      - { name: embed, label: "Embed URL (SoundCloud / YouTube embed link)", widget: string, required: false }
+      - { name: genre, label: Genre, widget: string, required: false }
+      - { name: bpm, label: BPM, widget: number, value_type: int, required: false }
+      - { name: key, label: "Musical key", widget: string, required: false }
+      - { name: gear, label: Gear, widget: list, required: false }
+      - { name: draft, label: "Draft (not published)", widget: boolean, default: false }
+      - { name: body, label: "Notes about the track", widget: markdown, required: false }
+
+  - name: settings
+    label: "About & CV"
+    files:
+      - name: cv
+        label: "About page / CV"
+        file: src/data/cv.json
+        format: json
+        fields:
+          - name: cvUrl
+            label: "CV (PDF)"
+            widget: file
+            required: false
+            media_folder: /public/files
+            public_folder: /files
+            hint: "Upload your CV PDF; a download button appears on the home and About pages."
+          - name: bio
+            label: Bio
+            widget: object
+            fields:
+              - { name: lead, label: "Lead sentence", widget: text }
+              - { name: rest, label: "Paragraphs", widget: list, field: { name: p, label: Paragraph, widget: text } }
+          - name: education
+            label: Education
+            widget: list
+            summary: "{{what}}"
+            fields:
+              - { name: when, label: "When", widget: string }
+              - { name: what, label: "Degree", widget: string }
+              - { name: where, label: "Institution", widget: string }
+          - name: experience
+            label: Experience
+            widget: list
+            required: false
+            summary: "{{what}} · {{where}}"
+            fields:
+              - { name: when, label: "When", widget: string }
+              - { name: what, label: "Role", widget: string }
+              - { name: where, label: "Organisation", widget: string }
+          - name: skills
+            label: "Methods & tools"
+            widget: list
+            summary: "{{group}}"
+            fields:
+              - { name: group, label: Group, widget: string }
+              - { name: items, label: Items, widget: list }
+          - { name: coursework, label: "Selected coursework", widget: list }

@@ -1,0 +1,190 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getProjects, kindLabel } from "../../lib/content";
+import { thumbSvg } from "../../lib/thumb";
+import { render } from "astro:content";
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map((p, i) => ({
+    params: { slug: p.id },
+    props: { p, prev: projects[i - 1] ?? null, next: projects[i + 1] ?? null },
+  }));
+}
+
+const { p, prev, next } = Astro.props;
+const { Content } = await render(p);
+const d = p.data;
+---
+
+<Base title={d.title} description={d.summary}>
+  <article class="wrap">
+    <header class="paper head">
+      <a href="/work" class="label back full">← §1 Work · Entry [{p.ref}]</a>
+      <h1 class="title wide">{d.title}</h1>
+      <div class="meta">
+        <span class="tag">{kindLabel[d.kind]}</span>
+        <span class="mono">{d.year}</span>
+        <span class="mono role">{d.role}</span>
+      </div>
+      <figure class="fig thumb side">
+        <Fragment set:html={thumbSvg(p.id, d.title, `Figure A.${p.ref}`, d.figure)} />
+        <figcaption class="fig-cap"><b>Figure A.{p.ref}.</b> Illustrative figure, generated from the project name.</figcaption>
+      </figure>
+      <div class="abstract">
+        <span class="label">Abstract</span>
+        <p>{d.summary}</p>
+      </div>
+      <dl class="facts">
+        {
+          d.methods.length > 0 && (
+            <div>
+              <dt class="label">Methods</dt>
+              <dd>{d.methods.join(" · ")}</dd>
+            </div>
+          )
+        }
+        <div>
+          <dt class="label">Stack</dt>
+          <dd>{d.stack.join(" · ")}</dd>
+        </div>
+      </dl>
+      <div class="links">
+        {d.live && <a class="btn" href={d.live} target="_blank" rel="noopener">Open live ↗</a>}
+        {d.repo && <a class="btn ghost" href={d.repo} target="_blank" rel="noopener">Replication files on GitHub ↗</a>}
+      </div>
+    </header>
+
+    <div class="paper">
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+
+    <nav class="pn" aria-label="More entries">
+      {
+        prev ? (
+          <a href={`/work/${prev.id}`}>
+            <span class="label">← [{prev.ref}]</span>
+            <span class="pt">{prev.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next && (
+          <a href={`/work/${next.id}`} class="nx">
+            <span class="label">[{next.ref}] →</span>
+            <span class="pt">{next.data.title}</span>
+          </a>
+        )
+      }
+    </nav>
+  </article>
+</Base>
+
+<style>
+  .head {
+    padding-top: clamp(2.5rem, 6vw, 4.5rem);
+    padding-bottom: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .back {
+    text-decoration: none;
+    margin-bottom: 1.4rem;
+  }
+
+  h1 {
+    font-size: clamp(2.6rem, 6vw, 4.6rem);
+    font-weight: 400;
+    max-width: 20ch;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1rem;
+    margin: 1.4rem 0 2rem;
+    color: var(--ink-2);
+  }
+
+  .side {
+    grid-column: 3;
+    grid-row: 3 / span 3;
+    align-self: start;
+    margin-top: 2rem;
+    max-width: 320px;
+  }
+
+  .abstract {
+    border-top: 1.5px solid var(--rule);
+    border-bottom: 1px solid var(--rule-soft);
+    padding: 1rem 0 1.2rem;
+  }
+
+  .abstract p {
+    margin: 0.3rem 0 0;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  .facts {
+    margin: 1rem 0 1.6rem;
+  }
+
+  .facts div {
+    display: grid;
+    grid-template-columns: 6rem 1fr;
+    gap: 1rem;
+    padding: 0.35rem 0;
+  }
+
+  .facts dd {
+    margin: 0;
+    font-size: 0.98rem;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+  }
+
+  .pn {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 4rem;
+    border-top: 1.5px solid var(--rule);
+  }
+
+  .pn a {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1.1rem 0;
+    text-decoration: none;
+  }
+
+  .nx {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .pt {
+    font-size: 1.3rem;
+  }
+
+  @media (max-width: 1020px) {
+    .side {
+      grid-column: 1;
+      grid-row: auto;
+      margin: 0 0 1.5rem;
+      max-width: 300px;
+    }
+  }
+</style>

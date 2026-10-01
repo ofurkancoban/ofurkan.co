@@ -1,0 +1,98 @@
+---
+// "Cite this person": a BibTeX entry for the human, with a copy button.
+import gh from "../data/github.json";
+const year = new Date(gh.fetchedAt).getFullYear();
+const bib = `@misc{coban${year}hire,
+  author       = {\\c{C}oban, \\"{O}mer Furkan},
+  title        = {Messy Data, Causal Answers, and Software That Ships},
+  howpublished = {\\url{https://ofurkan.co}},
+  year         = {${year}},
+  note         = {Working Paper No. 26-01. Open to work.}
+}`;
+---
+
+<details class="cite" data-cite>
+  <summary class="btn ghost">Cite this person</summary>
+  <div class="pop">
+    <pre><code data-bib>{bib}</code></pre>
+    <button type="button" class="copy mono" data-copy>Copy BibTeX</button>
+  </div>
+</details>
+
+<style>
+  .cite {
+    position: relative;
+  }
+
+  summary {
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .pop {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 8px);
+    left: 0;
+    width: min(460px, calc(100vw - 32px));
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    box-shadow: 6px 6px 0 var(--rule-soft);
+    padding: 0.9rem;
+  }
+
+  pre {
+    margin: 0;
+    font-family: var(--f-mono);
+    font-size: 0.7rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .copy {
+    margin-top: 0.7rem;
+    border: 1px solid var(--rule);
+    background: transparent;
+    padding: 0.35rem 0.6rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .copy:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  @media (max-width: 560px) {
+    .pop {
+      position: static;
+      margin-top: 0.6rem;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const box = document.querySelector<HTMLDetailsElement>("[data-cite]");
+    if (!box || box.dataset.bound) return;
+    box.dataset.bound = "1";
+    const btn = box.querySelector<HTMLButtonElement>("[data-copy]")!;
+    btn.addEventListener("click", async () => {
+      const text = box.querySelector("[data-bib]")!.textContent ?? "";
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = "Copied ✓";
+      } catch {
+        btn.textContent = "Select and copy manually";
+      }
+      setTimeout(() => (btn.textContent = "Copy BibTeX"), 1800);
+    });
+    document.addEventListener("click", (e) => {
+      if (box.open && !box.contains(e.target as Node)) box.open = false;
+    });
+  });
+</script>

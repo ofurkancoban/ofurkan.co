@@ -1,0 +1,148 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getNotes } from "../../lib/content";
+import { fmtDate, readingTime } from "../../lib/site";
+import { render } from "astro:content";
+
+export async function getStaticPaths() {
+  const notes = await getNotes();
+  return notes.map((p, i) => ({ params: { slug: p.id }, props: { p, newer: notes[i - 1] ?? null, older: notes[i + 1] ?? null } }));
+}
+
+const { p, newer, older } = Astro.props;
+const { Content } = await render(p);
+---
+
+<Base title={p.data.title} description={p.data.description}>
+  <div class="progress" data-progress aria-hidden="true"></div>
+  <article class="wrap">
+    <header class="paper head">
+      <a href="/notes" class="label back full">← §2 Notes</a>
+      <h1 class="title wide">{p.data.title}</h1>
+      <p class="byline">
+        <span class="author">Ömer Furkan Çoban</span>
+        <span class="mono">{fmtDate(p.data.date)} · {readingTime(p.body ?? "")} min read</span>
+      </p>
+      <div class="abstract">
+        <span class="label">Abstract</span>
+        <p>{p.data.description}</p>
+      </div>
+    </header>
+
+    <div class="paper">
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+
+    <footer class="paper end">
+      <div class="tags">{p.data.tags.map((t) => <span class="tag">{t}</span>)}</div>
+      <nav>
+        {older && <a href={`/notes/${older.id}`}>← {older.data.title}</a>}
+        {newer && <a href={`/notes/${newer.id}`} class="nw">{newer.data.title} →</a>}
+      </nav>
+    </footer>
+  </article>
+</Base>
+
+<style>
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    z-index: 70;
+    background: var(--accent);
+    transform-origin: left;
+    transform: scaleX(0);
+  }
+
+  .head {
+    padding-top: clamp(2.5rem, 6vw, 4.5rem);
+    padding-bottom: 1rem;
+  }
+
+  .back {
+    text-decoration: none;
+    margin-bottom: 1.4rem;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 6vw, 4.4rem);
+    font-weight: 400;
+    max-width: 22ch;
+  }
+
+  .byline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1.2rem;
+    margin: 1.4rem 0 2rem;
+    color: var(--muted);
+  }
+
+  .author {
+    font-variant-caps: small-caps;
+    letter-spacing: 0.04em;
+    font-size: 1.15rem;
+    color: var(--ink);
+  }
+
+  .abstract {
+    border-top: 1.5px solid var(--rule);
+    border-bottom: 1px solid var(--rule-soft);
+    padding: 1rem 0 1.2rem;
+    margin-bottom: 1rem;
+  }
+
+  .abstract p {
+    margin: 0.3rem 0 0;
+    font-size: 1.15rem;
+    font-style: italic;
+  }
+
+  .end {
+    margin-top: 4rem;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .end nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.4rem;
+    padding-top: 1rem;
+    border-top: 1.5px solid var(--rule);
+  }
+
+  .end nav a {
+    text-decoration: none;
+  }
+
+  .nw {
+    margin-left: auto;
+    text-align: right;
+  }
+</style>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const bar = document.querySelector<HTMLElement>("[data-progress]");
+    if (!bar) return;
+    const ac = new AbortController();
+    document.addEventListener("astro:before-swap", () => ac.abort(), { once: true });
+    const update = () => {
+      const h = document.documentElement.scrollHeight - innerHeight;
+      bar.style.transform = `scaleX(${h > 0 ? scrollY / h : 0})`;
+    };
+    addEventListener("scroll", update, { passive: true, signal: ac.signal });
+    update();
+  });
+</script>
