@@ -22,10 +22,10 @@
   --rule: rgba(27, 26, 23, 0.9);
   --rule-soft: rgba(27, 26, 23, 0.15);
   --heat-0: rgba(27, 26, 23, 0.07);
-  --heat-1: #c9d3ea;
-  --heat-2: #8ea3d6;
-  --heat-3: #4a6bc4;
-  --heat-4: #1f3f99;
+  --heat-1: #f0d2c8;
+  --heat-2: #e39a84;
+  --heat-3: #cf5638;
+  --heat-4: #9c2310;
   --grain: 0.06;
 
   --f-serif: "Newsreader Variable", "Iowan Old Style", Georgia, serif;
@@ -53,10 +53,10 @@
   --rule: rgba(233, 229, 220, 0.8);
   --rule-soft: rgba(233, 229, 220, 0.13);
   --heat-0: rgba(233, 229, 220, 0.07);
-  --heat-1: #22325a;
-  --heat-2: #34508f;
-  --heat-3: #5677d0;
-  --heat-4: #a9bfff;
+  --heat-1: #4a231b;
+  --heat-2: #8a3727;
+  --heat-3: #d4573d;
+  --heat-4: #ffa48f;
   --grain: 0.04;
   color-scheme: dark;
 }
