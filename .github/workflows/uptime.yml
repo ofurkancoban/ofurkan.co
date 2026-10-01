@@ -1,0 +1,72 @@
+name: Uptime
+
+# External uptime check for ofurkan.co and its subdomains. Runs on GitHub's
+# infrastructure, so it still reports when the VPS itself is down.
+# An outage opens an issue labelled "outage" (GitHub emails the owner);
+# recovery comments on it and closes it.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      test_url:
+        description: "Extra URL to check (e.g. a known 404 to test the outage issue flow)"
+        required: false
+        default: ""
+
+permissions:
+  issues: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check sites
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TEST_URL: ${{ inputs.test_url }}
+          URLS: |
+            https://ofurkan.co/
+            https://www.ofurkan.co/
+            https://aeds-rag-assistant.ofurkan.co/
+            https://pdftranslator.ofurkan.co/
+            https://pdfnotes.ofurkan.co/
+            https://quarto2pdf.ofurkan.co/
+        run: |
+          set -u
+          failures=""
+          for url in $URLS ${TEST_URL:-}; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 --retry 2 --retry-delay 10 --retry-all-errors "$url" || true)
+            echo "$code  $url"
+            case "$code" in
+              2*|3*) ;;
+              *) failures="${failures}- ${url} returned HTTP ${code:-000}"$'\n' ;;
+            esac
+          done
+
+          gh label create outage --color B60205 --description "Site down (uptime workflow)" 2>/dev/null || true
+          open=$(gh issue list --label outage --state open --limit 1 --json number --jq '.[0].number // empty')
+          now=$(date -u +"%Y-%m-%d %H:%M UTC")
+
+          if [ -n "$failures" ]; then
+            body="Uptime check failed at ${now}:"$'\n\n'"${failures}"$'\n'"Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            if [ -z "$open" ]; then
+              gh issue create --label outage --title "Site down: $(echo "$failures" | head -1 | sed 's/^- //; s/ returned.*//')" \
+                --body "@${GITHUB_REPOSITORY_OWNER} ${body}"
+            else
+              # Comment only when the set of failing URLs changes, to avoid noise.
+              last=$(gh issue view "$open" --json comments,body --jq '(.comments[-1].body // .body)')
+              if [[ "$last" != *"$failures"* ]]; then gh issue comment "$open" --body "$body"; fi
+            fi
+            # The issue is the notification; the run stays green so GitHub does not
+            # also send a workflow-failure email every 10 minutes during an outage.
+          elif [ -n "$open" ]; then
+            gh issue comment "$open" --body "All sites are back up as of ${now}."
+            gh issue close "$open"
+          fi
