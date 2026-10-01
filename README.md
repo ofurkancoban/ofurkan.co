@@ -1,6 +1,6 @@
 # ofurkan.co
 
-Personal site of Ömer Furkan Çoban, typeset as an economics working paper. Static site built with [Astro](https://astro.build), served by nginx from the VPS.
+Personal site of Furkan Çoban, typeset as an economics working paper. Static site built with [Astro](https://astro.build), served by nginx from the VPS.
 
 ## Commands
 

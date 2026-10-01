@@ -1,7 +1,7 @@
 // Single place for identity and contact details.
 
 export const SITE = {
-  name: "Ömer Furkan Çoban",
+  name: "Furkan Çoban",
   short: "Furkan Çoban",
   github: "ofurkancoban",
   location: "Oldenburg, Germany",
