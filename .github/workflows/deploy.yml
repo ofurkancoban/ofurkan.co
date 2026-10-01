@@ -3,9 +3,10 @@ name: Build and deploy
 on:
   push:
     branches: [main]
-  # Daily rebuild so the GitHub figures and tables on the home page stay current.
+  # Every 15 minutes: refresh GitHub data and rebuild only if it changed, so new
+  # commits in any repository show up in the figures and the regression table.
   schedule:
-    - cron: "23 3 * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -26,16 +27,33 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
-
+      # Uses only Node built-ins, so it runs before npm ci and keeps no-change runs short.
       - name: Refresh GitHub data
-        run: node scripts/fetch-github.mjs
+        id: data
         env:
           GITHUB_TOKEN: ${{ secrets.STATS_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/fetch-github.mjs
+          NEW=$(cat public/data-version.txt 2>/dev/null || echo "fetch-failed")
+          LIVE=$(curl -fsS https://ofurkan.co/data-version.txt 2>/dev/null || echo "none")
+          echo "data version: new=$NEW live=$LIVE"
+          CHANGED=true
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            # On a schedule, skip when nothing changed or the API call failed,
+            # so a failed fetch never replaces live data with the stale committed copy.
+            if [ "$NEW" = "$LIVE" ] || [ "$NEW" = "fetch-failed" ]; then CHANGED=false; fi
+          fi
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "Rebuild needed: $CHANGED"
 
-      - run: npx astro build
+      - if: steps.data.outputs.changed == 'true'
+        run: npm ci
+
+      - if: steps.data.outputs.changed == 'true'
+        run: npx astro build
 
       - name: Sync to VPS
+        if: steps.data.outputs.changed == 'true'
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}

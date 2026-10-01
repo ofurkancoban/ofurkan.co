@@ -4,3 +4,4 @@ dist/
 .DS_Store
 public/audio/_test*
 .env
+public/data-version.txt

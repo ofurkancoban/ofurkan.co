@@ -3,8 +3,13 @@
 //
 // Token resolution order: GITHUB_TOKEN env var, then `gh auth token`.
 // If no token is available the existing JSON is kept untouched.
+//
+// On a successful fetch it also writes public/data-version.txt: a hash of the data
+// (without the fetch timestamp). The deploy workflow compares it with the live site
+// and only rebuilds when the contribution data actually changed.
 
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +17,7 @@ import { fileURLToPath } from "node:url";
 const USER = "ofurkancoban";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outFile = resolve(root, "src/data/github.json");
+const versionFile = resolve(root, "public/data-version.txt");
 
 function getToken() {
   if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
@@ -135,6 +141,9 @@ async function main() {
 
   mkdirSync(dirname(outFile), { recursive: true });
   writeFileSync(outFile, JSON.stringify(data));
+  // fetchedAt changes on every run, so leave it out of the hash.
+  const stable = JSON.stringify({ ...data, fetchedAt: undefined });
+  writeFileSync(versionFile, createHash("sha256").update(stable).digest("hex") + "\n");
   console.log(`[github] ${data.total} contributions, streak ${data.current}/${data.longest}, ${languages.length} languages`);
 }
 

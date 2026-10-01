@@ -16,7 +16,7 @@ The GitHub token is taken from `GITHUB_TOKEN` or `gh auth token` and is only use
 ## Admin panel and deploys
 
 - **Admin panel:** https://ofurkan.co/admin (Sveltia CMS). Sign in with a fine-grained GitHub token that has *Contents: read and write* on this repository only. Saving in the panel commits to `main`.
-- **Deploys:** every push to `main` (including panel edits) runs `.github/workflows/deploy.yml`: refresh GitHub data, build, rsync to the VPS. It also runs daily so the GitHub figures stay current.
+- **Deploys:** every push to `main` (including panel edits) runs `.github/workflows/deploy.yml`: refresh GitHub data, build, rsync to the VPS. It also runs every 15 minutes: it fetches the contribution data, compares its hash (`/data-version.txt`) with the live site, and rebuilds only when it changed, so the figures and the regression table follow new commits in any repository.
 - **Server access:** the workflow logs in as the `deploy` user, whose key is locked by `rrsync` to `/var/www/ofurkan.co`. Secrets: `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`, `DEPLOY_HOST`, optional `STATS_TOKEN`.
 
 ## Adding content
