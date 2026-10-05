@@ -4,6 +4,7 @@ import Masthead from "../components/Masthead.astro";
 import Footer from "../components/Footer.astro";
 import Deck from "../components/Deck.astro";
 import "../styles/global.css";
+import serifFont from "@fontsource-variable/newsreader/files/newsreader-latin-opsz-normal.woff2?url";
 
 interface Props {
   title?: string;
@@ -30,6 +31,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href={serifFont} as="font" type="font/woff2" crossorigin />
     <link rel="alternate" type="application/rss+xml" title="Notes" href="/rss.xml" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />

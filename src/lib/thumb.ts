@@ -38,7 +38,7 @@ const f = (n: number) => n.toFixed(1);
 function axes(xTicks = 5, yTicks = 4, zeroLine?: number) {
   let s = `<line class="k" x1="${P.l}" y1="${H - P.b}" x2="${W - P.r}" y2="${H - P.b}"/>`;
   s += `<line class="k" x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${H - P.b}"/>`;
-  for (let i = 0; i <= xTicks; i++) {
+  for (let i = 0; xTicks > 0 && i <= xTicks; i++) {
     const x = X(i / xTicks);
     s += `<line class="k" x1="${f(x)}" y1="${H - P.b}" x2="${f(x)}" y2="${H - P.b + 4}"/>`;
   }
